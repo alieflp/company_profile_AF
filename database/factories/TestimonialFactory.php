@@ -1,0 +1,27 @@
+<?php
+
+namespace Database\Factories;
+
+use App\Models\Testimonial;
+use Illuminate\Database\Eloquent\Factories\Factory;
+
+/**
+ * @extends Factory<Testimonial>
+ */
+class TestimonialFactory extends Factory
+{
+    protected $model = Testimonial::class;
+
+    public function definition(): array
+    {
+        return [
+            'name' => $this->faker->name(),
+            'position' => $this->faker->jobTitle(),
+            'company' => $this->faker->company(),
+            'message' => $this->faker->paragraphs(2, true),
+            'avatar' => $this->faker->imageUrl(256, 256, 'people', true),
+            'rating' => $this->faker->numberBetween(3, 5),
+            'is_approved' => $this->faker->boolean(95),
+        ];
+    }
+}

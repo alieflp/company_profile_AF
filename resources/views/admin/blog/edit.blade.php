@@ -1,0 +1,238 @@
+@extends('layouts.admin')
+@section('content')
+@if(!config('features.blog'))
+    <div class="rounded-2xl border border-dashed border-slate-300 bg-white p-12 text-center">
+        <svg class="w-16 h-16 mx-auto mb-4 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
+        <p class="text-lg font-semibold text-slate-700 mb-1">Blog Feature Disabled</p>
+        <p class="text-sm text-slate-500">Enable the blog feature in your configuration</p>
+    </div>
+@else
+    <div class="mb-6">
+        <h2 class="text-2xl font-bold text-slate-900">Edit Blog Post</h2>
+        <p class="text-sm text-slate-600 mt-1">Update article content and settings</p>
+    </div>
+
+    <form method="POST" action="{{ route('admin.blog.update', $post->id ?? 0) }}" enctype="multipart/form-data" class="max-w-4xl">
+        @csrf
+        @method('PUT')
+        <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-8 space-y-6">
+            {{-- Title Field --}}
+            <div>
+                <label class="block text-sm font-semibold text-slate-700 mb-2">
+                    Post Title <span class="text-red-500">*</span>
+                </label>
+                <input 
+                    type="text" 
+                    name="title" 
+                    value="{{ old('title', $post->title ?? '') }}"
+                    class="w-full rounded-lg border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500" 
+                    placeholder="e.g. 10 Best Practices for Modern Web Development"
+                    required
+                />
+                @error('title')<p class="text-xs text-red-600 mt-1">{{ $message }}</p>@enderror
+                <p class="text-xs text-slate-500 mt-1">Compelling headline for your blog post</p>
+            </div>
+
+            {{-- Excerpt Field --}}
+            <div>
+                <label class="block text-sm font-semibold text-slate-700 mb-2">
+                    Excerpt / Summary
+                </label>
+                <textarea 
+                    name="excerpt" 
+                    rows="3" 
+                    class="w-full rounded-lg border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                    placeholder="Brief summary of the article..."
+                >{{ old('excerpt', $post->excerpt ?? '') }}</textarea>
+                @error('excerpt')<p class="text-xs text-red-600 mt-1">{{ $message }}</p>@enderror
+                <p class="text-xs text-slate-500 mt-1">Optional: Short preview text (recommended 150-160 characters)</p>
+            </div>
+
+            {{-- Cover Image Upload --}}
+            <div>
+                <label class="block text-sm font-semibold text-slate-700 mb-2">
+                    Cover Image
+                </label>
+                <div class="space-y-3">
+                    {{-- Current Cover Image --}}
+                    @if(!empty($post->cover_image))
+                        <div class="mb-3">
+                            <p class="text-xs text-slate-600 mb-2">Current Cover Image:</p>
+                            <img src="{{ asset($post->cover_image) }}" class="h-48 rounded-lg border-2 border-slate-200 object-cover" alt="Current cover">
+                        </div>
+                    @endif
+                    
+                    {{-- New Cover Image Upload --}}
+                    <input 
+                        type="file" 
+                        name="cover_image" 
+                        id="blog-cover-input"
+                        accept="image/jpeg,image/jpg,image/png,image/webp"
+                        class="block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                    />
+                    @error('cover_image')<p class="text-xs text-red-600 mt-1">{{ $message }}</p>@enderror
+                    <div id="blog-cover-preview" class="hidden mt-3">
+                        <p class="text-xs text-slate-600 mb-2">New Cover Preview:</p>
+                        <img id="blog-cover-preview-img" class="h-48 rounded-lg border-2 border-slate-200 object-cover" alt="New cover preview">
+                    </div>
+                </div>
+                <p class="text-xs text-slate-500 mt-1">Upload new cover image to replace current one (JPG, PNG, WebP - max 2MB)</p>
+            </div>
+
+            {{-- Content Field --}}
+            <div>
+                <label class="block text-sm font-semibold text-slate-700 mb-2">
+                    Article Content <span class="text-red-500">*</span>
+                </label>
+                <textarea 
+                    name="content" 
+                    rows="12" 
+                    class="w-full rounded-lg border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                    placeholder="Write your blog post content here..."
+                    required
+                >{{ old('content', $post->content ?? '') }}</textarea>
+                @error('content')<p class="text-xs text-red-600 mt-1">{{ $message }}</p>@enderror
+                <p class="text-xs text-slate-500 mt-1">Full article content (supports Markdown)</p>
+            </div>
+
+            {{-- Gallery Management --}}
+            <div>
+                <label class="block text-sm font-semibold text-slate-700 mb-2">
+                    Gallery Images
+                </label>
+                <div class="space-y-3">
+                    {{-- Existing Gallery Images --}}
+                    @if(!empty($post->gallery) && is_array($post->gallery) && count($post->gallery) > 0)
+                        <div class="mb-3">
+                            <p class="text-xs text-slate-600 mb-2">Current Gallery ({{ count($post->gallery) }} images):</p>
+                            <div id="blog-existing-gallery" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                @foreach($post->gallery as $index => $imagePath)
+                                    <div class="relative group existing-image-item" data-image-path="{{ $imagePath }}">
+                                        <img src="{{ asset($imagePath) }}" class="w-full h-auto rounded-lg border-2 border-slate-200" alt="Gallery image {{ $index + 1 }}">
+                                        <div class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg flex items-center justify-center">
+                                            <button 
+                                                type="button" 
+                                                onclick="removeExistingImage('{{ $imagePath }}', this, 'blogGalleryUploader')"
+                                                class="p-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition"
+                                            >
+                                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                                                </svg>
+                                            </button>
+                                        </div>
+                                    </div>
+                                @endforeach
+                            </div>
+                        </div>
+                    @endif
+                    
+                    {{-- New Gallery Images Upload --}}
+                    <label for="blog-gallery-input" class="block cursor-pointer">
+                        <div class="border-2 border-dashed border-slate-300 rounded-lg p-8 text-center hover:border-blue-400 hover:bg-blue-50/30 transition">
+                            <svg class="w-12 h-12 mx-auto mb-3 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                            </svg>
+                            <p class="text-sm font-medium text-slate-700 mb-1">Click to browse or drag & drop</p>
+                            <p class="text-xs text-slate-500">Add more images to gallery (max 20 files total)</p>
+                        </div>
+                    </label>
+                    <input 
+                        type="file" 
+                        name="gallery[]" 
+                        id="blog-gallery-input"
+                        accept="image/jpeg,image/jpg,image/png,image/webp"
+                        multiple
+                        class="hidden"
+                    />
+                    @error('gallery')<p class="text-xs text-red-600 mt-1">{{ $message }}</p>@enderror
+                    @error('gallery.*')<p class="text-xs text-red-600 mt-1">{{ $message }}</p>@enderror
+                    
+                    {{-- New Gallery Preview Grid --}}
+                    <div id="blog-gallery-preview" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3"></div>
+                </div>
+                <p class="text-xs text-slate-500 mt-1">New images will be added to existing gallery (JPG, PNG, WebP - max 2MB each)</p>
+            </div>
+
+            {{-- Tags Field --}}
+            <div>
+                <label class="block text-sm font-semibold text-slate-700 mb-2">
+                    Tags
+                </label>
+                <input 
+                    type="text" 
+                    name="tags" 
+                    value="{{ old('tags', is_array($post->tags ?? null) ? implode(',', $post->tags) : '') }}"
+                    class="w-full rounded-lg border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500" 
+                    placeholder="e.g. Laravel, PHP, Tailwind CSS (comma-separated)"
+                />
+                @error('tags')<p class="text-xs text-red-600 mt-1">{{ $message }}</p>@enderror
+                <p class="text-xs text-slate-500 mt-1">Optional: Comma-separated tags</p>
+            </div>
+
+            {{-- Publish Checkbox --}}
+            <div class="flex items-start gap-3 p-4 rounded-lg bg-slate-50 border border-slate-200">
+                <input 
+                    type="checkbox" 
+                    name="is_published" 
+                    value="1" 
+                    id="is_published" 
+                    {{ ($post->is_published ?? $post->published ?? false) ? 'checked' : '' }}
+                    class="mt-1 rounded border-slate-300 text-blue-600 focus:ring-blue-500" 
+                />
+                <label for="is_published" class="flex-1">
+                    <span class="block text-sm font-semibold text-slate-700">Published</span>
+                    <span class="text-xs text-slate-500">Make this post visible to the public</span>
+                </label>
+            </div>
+
+            {{-- Form Actions --}}
+            <div class="flex items-center gap-3 pt-4 border-t border-slate-200">
+                <button type="submit" class="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-blue-600 to-cyan-600 px-6 py-3 text-sm font-semibold text-white shadow-lg hover:from-blue-700 hover:to-cyan-700 transition">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                    <span>Update Post</span>
+                </button>
+                <a href="{{ route('admin.blog.index') }}" class="inline-flex items-center gap-2 px-6 py-3 text-sm font-medium text-slate-700 hover:bg-slate-100 rounded-lg transition">
+                    <span>Cancel</span>
+                </a>
+            </div>
+        </div>
+    </form>
+
+    {{-- Cover Image Preview Script --}}
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Preview new cover image
+            const coverInput = document.getElementById('blog-cover-input');
+            const coverPreview = document.getElementById('blog-cover-preview');
+            const coverPreviewImg = document.getElementById('blog-cover-preview-img');
+
+            if (coverInput) {
+                coverInput.addEventListener('change', function(e) {
+                    const file = e.target.files[0];
+                    if (file) {
+                        const reader = new FileReader();
+                        reader.onload = function(e) {
+                            coverPreviewImg.src = e.target.result;
+                            coverPreview.classList.remove('hidden');
+                        };
+                        reader.readAsDataURL(file);
+                    }
+                });
+            }
+        });
+    </script>
+
+    {{-- Gallery Upload Script --}}
+    <script src="{{ asset('js/advanced-image-upload.js') }}"></script>
+    <script>
+        // Initialize gallery uploader immediately
+        window.blogGalleryUploader = new AdvancedImageUpload({
+            inputId: 'blog-gallery-input',
+            previewContainerId: 'blog-gallery-preview',
+            existingImagesContainerId: 'blog-existing-gallery',
+            maxFiles: 20,
+            maxSizeMB: 2
+        });
+    </script>
+@endif
+@endsection
