@@ -19,6 +19,8 @@ class AdminWebController extends Controller
         $metrics = [
             'services' => Service::count(),
             'portfolios' => Portfolio::count(),
+            'testimonials' => Testimonial::count(),
+            'testimonials_pending' => Testimonial::where('is_approved', false)->count(),
             'contacts_unread' => ContactMessage::where('is_read', false)->count(),
         ];
         return view('admin.dashboard', compact('metrics'));
