@@ -19,7 +19,7 @@ class TestimonialFactory extends Factory
             'position' => $this->faker->jobTitle(),
             'company' => $this->faker->company(),
             'message' => $this->faker->paragraphs(2, true),
-            'avatar' => $this->faker->imageUrl(256, 256, 'people', true),
+            'avatar' => 'https://placehold.co/256x256/94a3b8/ffffff?text=Avatar',
             'rating' => $this->faker->numberBetween(3, 5),
             'is_approved' => $this->faker->boolean(95),
         ];

@@ -3,10 +3,13 @@
 namespace App\Http\Controllers;
 
 use App\Models\Setting;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\Rules\Password;
 
 class AdminSettingsController extends Controller
 {
@@ -137,9 +140,57 @@ class AdminSettingsController extends Controller
     private function needsQuotes($value)
     {
         return str_contains($value, ' ') || 
-               str_contains($value, '@') || 
-               str_contains($value, '#') ||
-               str_contains($value, '$') ||
-               empty($value);
+            str_contains($value, '@') || 
+            str_contains($value, '#') ||
+            str_contains($value, '$') ||
+            empty($value);
+    }
+
+    public function updateEmail(Request $request)
+    {
+        $request->validate([
+            'email' => 'required|email|unique:users,email,' . $request->user()->id,
+            'password' => 'required|string',
+        ]);
+
+        $user = $request->user();
+
+        // Verify current password
+        if (!Hash::check($request->password, $user->password)) {
+            return redirect()->back()
+                ->with('error', 'Password yang Anda masukkan salah!')
+                ->withInput();
+        }
+
+        // Update email
+        $user->email = $request->email;
+        $user->save();
+
+        return redirect()->route('admin.settings.index')
+            ->with('success', 'Email berhasil diupdate!');
+    }
+
+    public function updatePassword(Request $request)
+    {
+        $request->validate([
+            'current_password' => 'required|string',
+            'new_password' => ['required', 'confirmed', Password::min(8)],
+        ]);
+
+        $user = $request->user();
+
+        // Verify current password
+        if (!Hash::check($request->current_password, $user->password)) {
+            return redirect()->back()
+                ->with('error', 'Password saat ini yang Anda masukkan salah!')
+                ->withInput();
+        }
+
+        // Update password
+        $user->password = Hash::make($request->new_password);
+        $user->save();
+
+        return redirect()->route('admin.settings.index')
+            ->with('success', 'Password berhasil diubah!');
     }
 }

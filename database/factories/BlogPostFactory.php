@@ -22,7 +22,7 @@ class BlogPostFactory extends Factory
             'slug' => Str::slug($title.'-'.$this->faker->unique()->uuid()),
             'excerpt' => $this->faker->paragraph(),
             'content' => $this->faker->paragraphs(6, true),
-            'cover_image' => $this->faker->imageUrl(1280, 720, 'blog', true),
+            'cover_image' => 'https://placehold.co/1280x720/1e40af/ffffff?text=Blog+Post',
             'author' => $this->faker->name(),
             'published_at' => $isPublished ? $this->faker->dateTimeBetween('-30 days', 'now') : null,
             'is_published' => $isPublished,

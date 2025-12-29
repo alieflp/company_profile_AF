@@ -18,6 +18,9 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\PublicController;
 use App\Http\Controllers\AdminSettingsController;
 use App\Http\Controllers\TestimonialPublicController;
+use App\Http\Controllers\LegalPageController;
+use App\Http\Controllers\AdminLegalPageController;
+use App\Http\Controllers\PasswordResetController;
 
 // Public web pages (Blade) — named routes
 Route::get('/', [WebController::class, 'home'])->name('home');
@@ -33,9 +36,9 @@ Route::get('/blog/{blogPost:slug}', [WebController::class, 'blogShow'])->name('b
 Route::get('/contact', [WebController::class, 'contact'])->name('contact');
 
 // Legal pages
-Route::get('/privacy-policy', [App\Http\Controllers\LegalPageController::class, 'show'])->defaults('type', 'privacy-policy')->name('legal.show.privacy');
-Route::get('/terms-of-service', [App\Http\Controllers\LegalPageController::class, 'show'])->defaults('type', 'terms-of-service')->name('legal.show.terms');
-Route::get('/legal/{type}', [App\Http\Controllers\LegalPageController::class, 'show'])->name('legal.show');
+Route::get('/privacy-policy', [LegalPageController::class, 'show'])->defaults('type', 'privacy-policy')->name('legal.show.privacy');
+Route::get('/terms-of-service', [LegalPageController::class, 'show'])->defaults('type', 'terms-of-service')->name('legal.show.terms');
+Route::get('/legal/{type}', [LegalPageController::class, 'show'])->name('legal.show');
 
 // Web form submit — reuse existing public controller (adjust later for redirects)
 Route::post('/contact', [PublicController::class, 'submitContact'])->name('contact.submit');
@@ -47,10 +50,10 @@ Route::post('/auth/login', [AuthController::class, 'login']);
 Route::post('/auth/logout', [AuthController::class, 'logout']);
 
 // Password Reset Routes
-Route::get('/forgot-password', [App\Http\Controllers\PasswordResetController::class, 'showLinkRequestForm'])->name('password.request');
-Route::post('/forgot-password', [App\Http\Controllers\PasswordResetController::class, 'sendResetLinkEmail'])->name('password.email');
-Route::get('/reset-password/{token}', [App\Http\Controllers\PasswordResetController::class, 'showResetForm'])->name('password.reset');
-Route::post('/reset-password', [App\Http\Controllers\PasswordResetController::class, 'reset'])->name('password.update');
+Route::get('/forgot-password', [PasswordResetController::class, 'showLinkRequestForm'])->name('password.request');
+Route::post('/forgot-password', [PasswordResetController::class, 'sendResetLinkEmail'])->name('password.email');
+Route::get('/reset-password/{token}', [PasswordResetController::class, 'showResetForm'])->name('password.reset');
+Route::post('/reset-password', [PasswordResetController::class, 'reset'])->name('password.update');
 
 // Removed admin API resource routes from web to prevent conflicts with admin views.
 
@@ -58,9 +61,16 @@ Route::post('/reset-password', [App\Http\Controllers\PasswordResetController::cl
 Route::name('admin.')->prefix('admin')->middleware(\App\Http\Middleware\AdminSessionAuth::class)->group(function () {
     Route::get('/', [AdminWebController::class, 'dashboard'])->name('dashboard');
     Route::get('/settings', [AdminWebController::class, 'settingsIndex'])->name('settings.index');
+        // Redirect old email settings URL to main settings page
+        Route::get('/settings/email', function() {
+            return redirect()->route('admin.settings.index')->with('activeTab', 'email');
+        })->name('settings.email');
         Route::put('/settings', [AdminSettingsController::class, 'update'])->name('settings.update');
         Route::put('/settings/email', [AdminSettingsController::class, 'updateEmailConfig'])->name('settings.email.update');
         Route::post('/settings/email/test', [AdminSettingsController::class, 'testEmail'])->name('settings.email.test');
+        // Account settings
+        Route::put('/account/update-email', [AdminSettingsController::class, 'updateEmail'])->name('account.update-email');
+        Route::put('/account/update-password', [AdminSettingsController::class, 'updatePassword'])->name('account.update-password');
     Route::get('/about', [AdminWebController::class, 'aboutEdit'])->name('about.edit');
 
     Route::get('/services', [AdminWebController::class, 'servicesIndex'])->name('services.index');
@@ -94,9 +104,9 @@ Route::name('admin.')->prefix('admin')->middleware(\App\Http\Middleware\AdminSes
         Route::get('/contacts/{id}', [AdminWebController::class, 'contactsShow'])->name('contacts.show');
     
     // Legal Pages Management
-    Route::get('/legal', [App\Http\Controllers\AdminLegalPageController::class, 'index'])->name('legal.index');
-    Route::get('/legal/{type}/edit', [App\Http\Controllers\AdminLegalPageController::class, 'edit'])->name('legal.edit');
-    Route::put('/legal/{type}', [App\Http\Controllers\AdminLegalPageController::class, 'update'])->name('legal.update');
+    Route::get('/legal', [AdminLegalPageController::class, 'index'])->name('legal.index');
+    Route::get('/legal/{type}/edit', [AdminLegalPageController::class, 'edit'])->name('legal.edit');
+    Route::put('/legal/{type}', [AdminLegalPageController::class, 'update'])->name('legal.update');
     
     // About Us single record update (store & update) reuse AboutUsController
     Route::post('/about-us', [AboutUsController::class, 'store'])->name('about.store');

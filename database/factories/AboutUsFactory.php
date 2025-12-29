@@ -17,7 +17,7 @@ class AboutUsFactory extends Factory
         return [
             'title' => $this->faker->sentence(4),
             'content' => $this->faker->paragraphs(5, true),
-            'image' => $this->faker->imageUrl(1200, 800, 'business', true),
+            'image' => 'https://placehold.co/1200x800/0891b2/ffffff?text=About+Us',
             'meta' => [
                 'mission' => $this->faker->sentence(),
                 'vision' => $this->faker->sentence(),

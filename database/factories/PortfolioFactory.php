@@ -21,15 +21,16 @@ class PortfolioFactory extends Factory
             'slug' => Str::slug($title.'-'.$this->faker->unique()->uuid()),
             'excerpt' => $this->faker->sentence(15),
             'description' => $this->faker->paragraphs(4, true),
-            'image' => $this->faker->imageUrl(1200, 800, 'portfolio', true),
+            'image' => 'https://placehold.co/1200x800/1e40af/ffffff?text=Portfolio',
             'gallery' => [
-                $this->faker->imageUrl(1200, 800, 'portfolio', true),
-                $this->faker->imageUrl(1200, 800, 'portfolio', true),
+                'https://placehold.co/1200x800/1e40af/ffffff?text=Gallery+1',
+                'https://placehold.co/1200x800/1e40af/ffffff?text=Gallery+2',
             ],
             'link' => $this->faker->url(),
-            'category' => $this->faker->word(),
+            'category' => $this->faker->randomElement(['Web Development', 'Mobile App', 'UI/UX Design', 'Software']),
             'client' => $this->faker->company(),
             'completed_at' => $this->faker->date(),
+            'tech_stack' => $this->faker->randomElement(['Laravel, Vue.js, MySQL', 'React Native, Firebase', 'Figma, Adobe XD', 'PHP, JavaScript, Tailwind CSS']),
             'is_published' => $this->faker->boolean(90),
         ];
     }

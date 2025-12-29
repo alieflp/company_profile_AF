@@ -22,7 +22,7 @@ class ServiceFactory extends Factory
             'excerpt' => $this->faker->sentence(10),
             'description' => $this->faker->paragraphs(3, true),
             'icon' => 'fa-solid fa-gear',
-            'image' => $this->faker->imageUrl(800, 600, 'business', true),
+            'image' => 'https://placehold.co/800x600/2563eb/ffffff?text=Service',
             'is_active' => $this->faker->boolean(90),
             'sort_order' => $this->faker->numberBetween(0, 100),
         ];
