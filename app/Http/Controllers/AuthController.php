@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\RateLimiter;
 use App\Http\Requests\LoginRequest;
@@ -44,14 +45,26 @@ class AuthController extends Controller
 
     public function logout(Request $request)
     {
+        // Hapus semua token user dari database
         $user = $request->user();
         if ($user) {
             $user->tokens()->delete();
         }
+        
+        // Hapus auth_token dari session
+        $request->session()->forget('auth_token');
+        
+        // Logout user dari guard
+        Auth::logout();
+        
+        // Invalidate dan regenerate session untuk security
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
+        
         if ($request->expectsJson()) {
             return response()->json(['logged_out' => true]);
         }
-        $request->session()->forget('auth_token');
+        
         return redirect()->route('admin.login')->with('success', 'Anda telah logout');
     }
 }

@@ -58,12 +58,19 @@ class PublicController extends Controller
 
     public function submitContact(Request $request)
     {
-        if (RateLimiter::tooManyAttempts('contact:'.$request->ip(), 10)) {
+        // Check rate limit PERTAMA sebelum proses apapun
+        $key = 'contact:' . $request->ip();
+        
+        if (RateLimiter::tooManyAttempts($key, 3)) {
             if ($request->expectsJson()) {
                 return response()->json(['message' => 'Too many submissions'], 429);
             }
             return redirect()->route('contact')->with('too_many_requests', 'Terlalu banyak kiriman, coba lagi nanti.');
         }
+        
+        // Hit rate limiter SEBELUM simpan data (increment counter)
+        RateLimiter::hit($key, 60); // 60 detik decay time
+        
         $data = $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|email|max:255',
@@ -71,14 +78,17 @@ class PublicController extends Controller
             'subject' => 'nullable|string|max:255',
             'message' => 'required|string',
         ]);
+        
         $data['status'] = 'new';
         $data['ip_address'] = $request->ip();
         $data['user_agent'] = $request->userAgent();
+        
         $created = ContactMessage::create($data);
-        RateLimiter::hit('contact:'.$request->ip());
+        
         if ($request->expectsJson()) {
             return $created;
         }
+        
         return redirect()->route('contact')->with('success', 'Pesan berhasil dikirim. Kami akan menghubungi Anda segera!');
     }
 }
